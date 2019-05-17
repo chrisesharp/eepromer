@@ -8,64 +8,33 @@
 
 
 import sys
-from serial import Serial
-from time import sleep
 from getopt import getopt, GetoptError
 import struct
+from eeprom import EEPROM
 
-RECSIZE = 16
-OK = b'OK\r\n'
-
-def open_serial_port(port):
-    serial_port = Serial(port,
-                        timeout=0.1,
-                        baudrate=9600,
-                        dsrdtr=True)
-    sleep(1)
-    return serial_port
-
-def calc_writeline(addr, data):
-    chksum = 0
-    cmd = "W" + ("%04x" % addr) + ":"
-    for byte in data:
-        cmd += ("%02x" % byte)
-        chksum = chksum ^ byte
-    cmd += "ffffffffffffffffffffffffffffffff"
-    cmd = cmd[:38]
-    if (len(data) & 1):
-        chksum = chksum ^ 255
-    chksum = chksum & 255
-    cmd += "," + ("%02x" % chksum)
-    return cmd.upper()
-
-def wait_okay(port):
-    retries = 0
-    resp = port.readline()
-    while resp != OK:
-        print(resp)
-        retries += 1
-        if retries > 50:
-            port.close()
-            sys.exit("Didn't receive OK back from programmer.\n")
-        resp = port.readline()
-
-def read_record_from_file(rom):
-    record = rom.read(RECSIZE)
-    if len(record) == 0:
-        return None
-    return record
+programmer = None
 
 def read_rom_from_file(rom_file):
     rom = []
     with open(rom_file, 'rb') as rom_src:
-        for record in iter(lambda: rom_src.read(RECSIZE), b''):
+        for record in iter(lambda: rom_src.read(programmer.RECSIZE), b''):
             rom.append(record)
     return rom
 
-def format_record(input, record, func):
-    output = input[:] + ":"
-    for i in range(RECSIZE):
-        output += (" %02x" % func(record, i)).upper()
+def write_record_to_file(record, output):
+    data = record[5:-5]
+    bytes_written = 0
+    for i in range(0, 64, 2):
+        byte_string = data[i:i+2]
+        if byte_string:
+            byte = struct.pack("B", int(byte_string, 16))
+            bytes_written += output.write(byte)
+    return bytes_written
+
+def format_record(input, record, formatter):
+    output = str(input) + ":"
+    for i in range(programmer.RECSIZE):
+        output += (" %02x" % formatter(record, i)).upper()
     return output
 
 def rom_byte(record, index):
@@ -76,23 +45,27 @@ def rom_byte(record, index):
 def file_byte(record, index):
     return record[index]
 
-def read_eeprom(port, rom_file_name, dumpstart, dumpend, verify=False, dump_rom=False):
+def check_diff(address, base, eprom_record, rom_src):
+    actual = format_record(address, eprom_record, rom_byte)
+    file_index = int((address - base) / programmer.RECSIZE)
+    file_record = format_record(address, rom_src[file_index], file_byte)
+    if actual != file_record:
+        print("DIFF:")
+        print("\tROM :" + actual)
+        print("\tFILE:" + file_record)
+
+def read_eeprom(programmer, rom_file_name, dumpstart, dumpend, verify=False, dump_rom=False):
     rom_src = None
     output_stream = None
     print("Reading EEPROM from {} to {}".format(dumpstart, dumpend))
     if verify:
-        if not rom_file_name:
-            usage("Must provide ROM file to verify against.")
-        elif dump_rom:
-            usage("Can't verify AND dump to file...choose one or other.")
-        else:
-            rom_src = read_rom_from_file(rom_file_name)
-            print("Verifying EEPROM from file {}".format(rom_file_name))
-            rom_size = len(rom_src) * RECSIZE
-            print("ROM file is {} records long.".format(rom_size))
-            if rom_size < (dumpend - dumpstart):
-                print("The ROM file is smaller than the specified address range.")
-                exit(1)
+        print("Verifying EEPROM from file {}".format(rom_file_name))
+        rom_src = read_rom_from_file(rom_file_name)
+        rom_size = len(rom_src) * programmer.RECSIZE
+        print("ROM file is {} records long.".format(rom_size))
+        if rom_size < (dumpend - dumpstart):
+            print("The ROM file is smaller than the specified address range.")
+            exit(1)
 
     if dump_rom:
         print("Writing contents to ", rom_file_name)
@@ -101,44 +74,27 @@ def read_eeprom(port, rom_file_name, dumpstart, dumpend, verify=False, dump_rom=
     bytes_written = 0
     address = dumpstart
     while (address < dumpend):
-        addr = ("%04x" % address).upper()
-        cmd = str.encode("R" + addr + chr(10))
-        port.write(cmd)
-        port.flush()
-        line = port.readline().upper()
+        record = programmer.read(address)
         if verify:
-            rom_record = format_record(addr, line, rom_byte)
-            file_record = format_record(addr, rom_src[int(address/RECSIZE)], file_byte)
-            if rom_record != file_record:
-                print("DIFF:")
-                print("\tROM :" + rom_record)
-                print("\tFILE:" + file_record)
+            check_diff(address, dumpstart, record, rom_src)
         elif dump_rom:
-            data = line[5:-5]
-            for i in range(0, 64, 2):
-                byte_string = data[i:i+2]
-                if byte_string:
-                    byte = struct.pack("B", int(byte_string, 16))
-                    bytes_written += output_stream.write(byte)
+            bytes_written += write_record_to_file(record, output_stream)
         else:
-            print(line)
-        wait_okay(port)
-        address += RECSIZE
+            print(record)
+        address += programmer.RECSIZE
+    
     if dump_rom:
         print("bytes written:", bytes_written)
+        output_stream.close()
 
-def write_eeprom(port, rom_file, start, end, verify=False, hex_output=False):
+def write_eeprom(programmer, rom_file, start, end, verify=False, hex_output=False):
     if not rom_file:
         usage("Must provide ROM file to write.")
     print("Writing ROM {} to EEPROM.".format(rom_file))
     address = start
     for record in read_rom_from_file(rom_file):
-        data = calc_writeline(address, record)
-        print("Writing command {} to programmer.".format(data))
-        port.write(str.encode(data + chr(10)))
-        port.flush()
-        wait_okay(port)
-        address += RECSIZE
+        programmer.write(address, record)
+        address += programmer.RECSIZE
         if address >= end:
             break
 
@@ -180,9 +136,9 @@ def parse_args(input):
             verify_rom = True
             func = read_eeprom
         elif o == "-s":
-            dumpstart = int(a)
+            start = int(a)
         elif o == "-e":
-            dumpend = int(a)
+            end = int(a)
         elif o == "-p":
             TTY = a
         elif o == "-r":
@@ -190,11 +146,18 @@ def parse_args(input):
         elif o == "-w":
             func = write_eeprom
 
-    return func, rom_file, start, end, verify_rom, dump_rom, TTY
+    if verify_rom and dump_rom:
+        usage("Can't verify AND dump to file...choose one or other.")
+    if verify_rom and not rom_file:
+        usage("Must provide ROM file to verify against.")
+    if dump_rom and not rom_file:
+        usage("Must provide ROM file name to dump to.")
+    
+    return (func, rom_file, start, end, verify_rom, dump_rom, TTY)
 
 
 if __name__ == "__main__":
-    op, rom_file, dumpstart, dumpend, verify_rom, dump_rom, TTY = parse_args(sys.argv[1:])
-    port = open_serial_port(TTY)
-    op(port, rom_file, dumpstart, dumpend, verify_rom, dump_rom)
-    port.close()
+    (op, rom_file, dumpstart, dumpend, verify_rom, dump_rom, TTY) = parse_args(sys.argv[1:])
+    programmer = EEPROM(TTY)
+    op(programmer, rom_file, dumpstart, dumpend, verify_rom, dump_rom)
+    programmer.close()
