@@ -39,6 +39,12 @@ class EEPROM():
                 sys.exit("Didn't receive OK back from programmer.\n")
             resp = self.port.readline()
     
+    def version(self):
+        cmd = str.encode("V" + chr(10))
+        self.send_cmd(cmd)
+        response = self.port.readline().upper()
+        return response.decode('UTF-8')
+    
     def send_cmd(self, cmd):
         self.port.write(cmd)
         self.port.flush()

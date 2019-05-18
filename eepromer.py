@@ -67,6 +67,10 @@ class Programmer():
             print("\tFILE:" + file_record)
     
     def read_eeprom(self):
+        if self.start < 0:
+            version = self.programmer.version()
+            print(version)
+            return
         print("Reading EEPROM from {} to {}".format(self.start, self.end))
         if self.verify_rom:
             print("Verifying...")
@@ -148,9 +152,10 @@ def parse_args(input):
     start = 0
     end = 0
     reading = True
+    version = False
 
     try:
-        opts, args = getopt(input, "rwdvbs:e:p:")
+        opts, args = getopt(input, "Vrwdvbs:e:p:")
         if len(args) > 0:
             rom_file = args.pop(0)
     except GetoptError as err:
@@ -162,6 +167,8 @@ def parse_args(input):
         elif o == "-v":
             verify_rom = True
             reading = True
+        elif o == "-V":
+            version = True
         elif o == "-s":
             start = int(a)
         elif o == "-e":
@@ -179,6 +186,8 @@ def parse_args(input):
         usage("Must provide ROM file to verify against.")
     if dump_rom and not rom_file:
         usage("Must provide ROM file name to dump to.")
+    if version:
+        return (True, None, -1, -1, False, False, TTY)
     
     return (reading, rom_file, start, end, verify_rom, dump_rom, TTY)
 
