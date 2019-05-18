@@ -46,6 +46,7 @@ class Programmer():
             exit(-1)
     
     def set_dump_file(self, filename):
+        self.dump_rom = True
         self.file_name = filename
         print("Writing contents to ", filename)
         self.output_stream = open(filename, 'wb')
@@ -69,13 +70,15 @@ class Programmer():
         print("Reading EEPROM from {} to {}".format(self.start, self.end))
         if self.verify_rom:
             print("Verifying...")
+        if self.dump_rom:
+            print("Dumping to file.")
         bytes_written = 0
         address = self.start
         while (address < self.end):
             record = self.programmer.read(address)
             if self.verify_rom:
                 self.check_diff(address, record)
-            elif self.output_stream:
+            elif self.dump_rom:
                 bytes_written += write_record_to_file(record, self.output_stream)
             else:
                 print(record)
