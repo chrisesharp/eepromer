@@ -13,6 +13,9 @@ class EEPROM():
                     dsrdtr=True)
         sleep(1)
     
+    def __del__(self):
+        self.port.close()
+    
     def read(self, addr):
         cmd = str.encode("R" + address_field(addr) + chr(10))
         self.send_cmd(cmd)
@@ -39,9 +42,6 @@ class EEPROM():
     def send_cmd(self, cmd):
         self.port.write(cmd)
         self.port.flush()
-
-    def close(self):
-        self.port.close()
 
 def address_field(addr):
     return ("%04x" % addr).upper()
