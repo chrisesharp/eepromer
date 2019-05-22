@@ -105,7 +105,6 @@ class Programmer():
     def set_input_rom(self, filename):
         self.file_name = filename
         rom_size, self.rom_src = read_rom_from_file(filename, self.RECSIZE)
-        # rom_size = len(self.rom_src) * self.RECSIZE
         print("ROM file is {} bytes long.".format(rom_size), file=self.print_stream)
         if rom_size < (self.end - self.start):
             print("The ROM file is smaller than the specified address range.", file=self.print_stream)
