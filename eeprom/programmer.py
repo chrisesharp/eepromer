@@ -101,7 +101,6 @@ class Programmer():
                 break
         return
 
-
 def read_rom_from_file(rom_file, recsize):
     rom = []
     num_bytes = 0
