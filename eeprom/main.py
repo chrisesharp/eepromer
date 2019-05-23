@@ -76,12 +76,13 @@ def parse_args(input):
     return (reading, rom_file, start, end, verify_rom, dump_rom, TTY)
 
 def main(args):
+    WAIT_FOR_ARDUINO_IN_SECS = 1 # Minimum of 1 sec required
     (reading, rom_file, dumpstart, dumpend, verify_rom, dump_rom, TTY) = parse_args(args[1:])
 
     eeprom = EEPROM()
     try:
         eeprom.open_port(TTY)
-        sleep(0.5)
+        sleep(WAIT_FOR_ARDUINO_IN_SECS)
     except EEPROMException:
         print("No serial device attached.")
         exit(-2)
