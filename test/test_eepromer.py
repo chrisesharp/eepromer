@@ -1,4 +1,5 @@
-from eeprom_writer import EEPROM, Programmer
+from eeprom.writer import EEPROM
+from eeprom.programmer import Programmer
 from io import StringIO, BytesIO
 import pytest
 import os
@@ -132,11 +133,11 @@ def test_programmer_read_verify_0_64_bytes_fails_with_smaller_file():
     programmer.set_end(63)
     programmer.set_verify(True)
     with pytest.raises(SystemExit):
-        programmer.set_input_rom("testA.rom")
+        programmer.set_input_rom("test/testA.rom")
 
 
 def test_programmer_read_verify_0_31_bytes():
-    test_input = "testA.rom"
+    test_input = "test/testA.rom"
     eeprom = MockEEPROM()
     result = StringIO()
     programmer = Programmer(eeprom, result)
@@ -153,7 +154,7 @@ Verifying...
 """.format(os.path.getsize(test_input))
 
 def test_programmer_read_verify_0_31_bytes_fail():
-    test_input = "testB.rom"
+    test_input = "test/testB.rom"
     eeprom = MockEEPROM()
     result = StringIO()
     programmer = Programmer(eeprom, result)
@@ -178,7 +179,7 @@ DIFF:
 """.format(os.path.getsize(test_input))
 
 def test_programmer_write_0_31_bytes():
-    test_input = "testA.rom"
+    test_input = "test/testA.rom"
     eeprom = MockEEPROM()
     result = StringIO()
     programmer = Programmer(eeprom, result)
@@ -189,11 +190,11 @@ def test_programmer_write_0_31_bytes():
     programmer.write_eeprom()
     print(result.getvalue())
     assert result.getvalue() == """ROM file is {} bytes long.
-Writing ROM testA.rom to EEPROM.
+Writing ROM test/testA.rom to EEPROM.
 """.format(os.path.getsize(test_input))
 
 def test_programmer_write_verify_0_31_bytes():
-    test_input = "testA.rom"
+    test_input = "test/testA.rom"
     eeprom = MockEEPROM()
     result = StringIO()
     programmer = Programmer(eeprom, result)
@@ -205,12 +206,12 @@ def test_programmer_write_verify_0_31_bytes():
     programmer.write_eeprom()
     print(result.getvalue())
     assert result.getvalue() == """ROM file is {} bytes long.
-Writing ROM testA.rom to EEPROM.
+Writing ROM test/testA.rom to EEPROM.
 """.format(os.path.getsize(test_input))
 
 
 def test_programmer_write_verify_0_31_bytes_fails():
-    test_input = "testB.rom"
+    test_input = "test/testB.rom"
     eeprom = MockEEPROM()
     result = StringIO()
     programmer = Programmer(eeprom, result)
@@ -234,8 +235,8 @@ DIFF:
 """.format(os.path.getsize(test_input), test_input)
 
 def test_programmer_read_dump_0_31_bytes_file():
-    test_input = "testA.rom"
-    test_output = "testA.out"
+    test_input = "test/testA.rom"
+    test_output = "test/testA.out"
     read_size = 32
     expected_size = os.path.getsize(test_input)
     eeprom = MockEEPROM()

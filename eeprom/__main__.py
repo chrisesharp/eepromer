@@ -10,11 +10,15 @@
 import sys
 from getopt import getopt, GetoptError
 import struct
-from eeprom_writer import EEPROM, Programmer
+from time import sleep
+from .writer import EEPROM
+from .programmer import Programmer
+
+MODULE = sys.argv[0].split("/")[-2]
 
 def usage(err):
     print(err)
-    print("Usage: %s [ -V | -r | -w | -d] [-v] [-s n] [-e n] [-p port] rom_file" % (sys.argv[0]))
+    print("Usage: %s [ -V | -r | -w | -d] [-v] [-s n] [-e n] [-p port] rom_file" % (MODULE))
     print("Where:")
     print("    -V - print EEPROM writer firmware version")
     print("    -r - read EEPROM contents and print as hex (default option)")
@@ -79,6 +83,7 @@ if __name__ == "__main__":
 
     eeprom = EEPROM()
     eeprom.open_port(TTY)
+    sleep(0.5)
     programmer = Programmer(eeprom, sys.stdout)
     programmer.set_start(dumpstart)
     programmer.set_end(dumpend)
