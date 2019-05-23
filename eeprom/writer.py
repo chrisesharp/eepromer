@@ -1,4 +1,4 @@
-from serial import Serial
+from serial import Serial, SerialException
 import sys
 import struct
 
@@ -11,7 +11,10 @@ class EEPROM():
     
     def open_port(self, tty_port="/dev/tty.usbserial-1420"):
         if isinstance(tty_port, str):
-            self.port = Serial(tty_port, timeout=0.1, dsrdtr=True)
+            try:
+                self.port = Serial(tty_port, timeout=0.1, dsrdtr=True)
+            except SerialException as err:
+                raise EEPROMException(err)
         else:
             self.port = tty_port
     
@@ -71,3 +74,6 @@ def data_field(data):
     chksum = chksum & 255
     payload += "," + ("%02x" % chksum)
     return payload.upper()
+
+class EEPROMException(Exception):
+    pass

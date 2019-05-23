@@ -1,0 +1,21 @@
+Metadata-Version: 2.1
+Name: eepromer
+Version: 0.1
+Summary: An EEPROM programmer utility package
+Home-page: https://github.com/chrisesharp/eepromer
+Author: Chris Sharp
+Author-email: chrisesharp@gmail.com
+License: UNKNOWN
+Description: # EEPROM programmer client
+        
+        This is my version of the client code for Kris Adcock's Arduino Mega based EEPROM programmer (<http://danceswithferrets.org/geekblog/?page_id=903)>
+        
+        His arduino firmware it relies on is at <https://github.com/oddblk/eeprom-writer>
+        
+        This python code was inspired by his C++ client at <https://github.com/oddblk/eeprommer>
+        
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown

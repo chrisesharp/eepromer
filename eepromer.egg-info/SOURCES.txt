@@ -1,0 +1,14 @@
+README.md
+eepromer
+setup.py
+eeprom/__init__.py
+eeprom/__main__.py
+eeprom/main.py
+eeprom/programmer.py
+eeprom/writer.py
+eepromer.egg-info/PKG-INFO
+eepromer.egg-info/SOURCES.txt
+eepromer.egg-info/dependency_links.txt
+eepromer.egg-info/top_level.txt
+test/__init__.py
+test/test_eepromer.py
