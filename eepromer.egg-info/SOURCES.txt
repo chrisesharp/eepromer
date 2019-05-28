@@ -3,6 +3,7 @@ eepromer
 setup.py
 eeprom/__init__.py
 eeprom/__main__.py
+eeprom/fake_serial.py
 eeprom/main.py
 eeprom/programmer.py
 eeprom/writer.py

@@ -13,7 +13,7 @@ from time import sleep
 from .writer import EEPROM, EEPROMException
 from .programmer import Programmer
 import sys
-from .fake_serial import Serial as FakeSerial
+from .fake_serial import FakeSerial
 
 MODULE_NAME = "eeprom"
 
@@ -110,6 +110,7 @@ def main(outstream, args):
 
     eeprom = EEPROM(options["rom_size"] * 1024)
     if options["debug"]:
+        print("DEBUG MODE", outstream)
         options["TTY"] = FakeSerial(options["TTY"])
         
     try:

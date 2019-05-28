@@ -1,4 +1,4 @@
-class Serial:
+class FakeSerial:
     def __init__( self, port=None, baudrate = 19200, timeout=1,
                   bytesize = 8, parity = 'N', stopbits = 1, xonxoff=0,
                   rtscts = 0):
