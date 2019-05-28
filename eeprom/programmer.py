@@ -2,7 +2,7 @@ from serial import Serial
 from time import sleep
 import sys
 import struct
-from .writer import EEPROM
+from .writer import EEPROM, data_field, address_field
 
 class Programmer():
     def __init__(self, eeprom_programmer, print_stream):
@@ -16,6 +16,7 @@ class Programmer():
         self.print_stream = print_stream
         self.programmer = eeprom_programmer
         self.RECSIZE = 16
+        self.debug = False
     
     def set_start(self, start):
         self.start = start
@@ -25,6 +26,9 @@ class Programmer():
     
     def set_verify(self, verify):
         self.verify_rom = verify
+    
+    def set_debug(self, debug):
+        self.debug = debug
     
     def set_input_rom(self, filename):
         self.file_name = filename
@@ -87,18 +91,20 @@ class Programmer():
         return
     
     def write_eeprom(self):
+        if (self.end - self.start) > self.programmer.rom_size:
+            print("EEPROM size is {} but you are trying to write to write {} bytes\n".format(self.programmer.rom_size, (self.end - self.start)), file=self.print_stream)
+            exit(-1)
         print("Writing ROM {} to EEPROM.".format(self.file_name), file=self.print_stream)
         address = self.start
-        for record in self.rom_src:
-            self.programmer.write(address, record)
+        while address < self.end:
+            record = self.rom_src[int(address / self.RECSIZE)]
+            cmd_sent = self.programmer.write(address, record)
             if self.verify_rom:
                 readback = self.programmer.read(address)
                 diff = self.check_diff(address, readback)
                 if diff:
                     print(diff, file=self.print_stream)
             address += self.RECSIZE
-            if address >= self.end:
-                break
         return
 
 def read_rom_from_file(rom_file, recsize):

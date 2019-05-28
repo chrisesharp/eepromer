@@ -2,4 +2,4 @@
 from eeprom import main
 import sys
 
-main.main(sys.argv) 
+main.main(sys.stdout, sys.argv)

@@ -5,9 +5,10 @@ import struct
 OK = b'OK\r\n'
 
 class EEPROM():
-    def __init__(self):
+    def __init__(self, rom_size=8192):
         self.RECSIZE = 16
         self.port = None
+        self.rom_size = rom_size
     
     def open_port(self, tty_port="/dev/tty.usbserial-1420"):
         if isinstance(tty_port, str):
@@ -36,6 +37,7 @@ class EEPROM():
         cmd = str.encode("W" + address_field(addr) + ":" + data_field(data) + chr(10))
         self.send_cmd(cmd)
         self.wait_okay()
+        return cmd
     
     def wait_okay(self):
         retries = 0

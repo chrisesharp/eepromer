@@ -3,4 +3,4 @@
 if __name__ == "__main__":
     import sys
     from . import main
-    main.main(sys.argv)
+    main.main(sys.stdout, sys.argv)
