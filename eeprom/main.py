@@ -45,7 +45,7 @@ def usage(out, err):
 def parse_args(outstream, input):
     options = {
             "rom_file": None,
-            "TTY":  "/dev/tty.usbserial-1420",
+            "TTY":  "/dev/tty.usbserial-14110",
             "dump_rom": False,
             "verify_rom": False,
             "start": 0,
